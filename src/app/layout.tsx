@@ -6,8 +6,8 @@ import Root from '@/components/Root'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'Chat APP',
-  description: 'Simple Chat App',
+  title: 'fitUprising Chat',
+  description: 'fitUprising chat',
 }
 
 export default function RootLayout({children}: {children: React.ReactNode}) {

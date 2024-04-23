@@ -15,7 +15,7 @@ import {
   HUGGING_FACE_MODEL,
   RAG_PUBLIC_DIRECTORY_PATH,
   DEFAULT_OPENAI_MODEL,
-} from '@/app/api/const'
+} from '@/app/config/const'
 
 export const getVectorStorePath = (type?: string) => {
   return RAG_VECTOR_STORE_PATH

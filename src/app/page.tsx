@@ -2,11 +2,9 @@
 
 import {useCompletion} from 'ai/react'
 import {Trash} from 'lucide-react'
-import Link from 'next/link'
 import {ChangeEvent, FormEvent, useEffect, useState} from 'react'
 
 import Chat from '@/components/Chat'
-import {Button} from '@/components/ui/button'
 import {Separator} from '@/components/ui/separator'
 import {useFile, useMessages} from '@/lib/store'
 
@@ -14,7 +12,7 @@ async function uploadFile(file: File) {
   try {
     const formData = new FormData()
     formData.append('file', file)
-    const response = await fetch('/api/embed', {
+    const response = await fetch('/api/ai/embed', {
       method: 'POST',
       body: formData,
     })
@@ -32,12 +30,12 @@ async function uploadFile(file: File) {
 
 const Home = () => {
   const {messages, setMessages, clearMessages} = useMessages()
-  const {file, setFile, clear: clearFile} = useFile()
+  const {clear: clearFile} = useFile()
   const [isUploading, setIsUploading] = useState(false)
 
   const handleFileSelected = async (event?: ChangeEvent<HTMLInputElement>) => {
     if (!event) { 
-	  return clearFile()
+	    return clearFile()
     }
 
     setIsUploading(true)
@@ -51,15 +49,14 @@ const Home = () => {
 
     for (var i = 0; i < files.length; i++) {
       await uploadFile(files[i]);
-    //   setFile(files[i])
     }
     
     setIsUploading(false)
-    event.target.value = '' // clear input as we handle the file selection in state
+    event.target.value = ''
   }
 
   const {input, setInput, handleInputChange, handleSubmit, completion, isLoading} = useCompletion({
-    api: `/api`,
+    api: `/api/ai`,
     headers: {
       'Content-Type': 'application/json',
     },
@@ -94,11 +91,10 @@ const Home = () => {
         onSubmit={onSubmit}
         disabled={isLoading}
         onFileSelected={handleFileSelected}
-        file={file}
         isUploading={isUploading}
       />
       <div
-        className="flex cursor-pointer items-center gap-2 text-xs text-red-500"
+        className="flex cursor-pointer items-center gap-2 text-xs text-red-500 mr-auto"
         onClick={clearMessages}>
         <Trash className="h-4 w-4" /> Clear Chat
       </div>
