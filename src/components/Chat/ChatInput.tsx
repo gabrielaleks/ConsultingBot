@@ -4,12 +4,12 @@ import {ChangeEvent, useRef} from 'react'
 import {cn} from '@/lib/utils'
 
 import FileUpload from '../FileUpload'
+import FilesManager from '../FilesManager'
 import {Button} from '../ui/button'
 import {Textarea} from '../ui/textarea'
 
 type Props = {
   onFileSelected?: (event?: ChangeEvent<HTMLInputElement>) => void
-  file?: File | null
   onChange: (
     e: React.ChangeEvent<HTMLInputElement> | React.ChangeEvent<HTMLTextAreaElement>
   ) => void
@@ -20,7 +20,6 @@ type Props = {
 }
 
 const ChatInput = ({
-  file,
   onFileSelected,
   onChange,
   value,
@@ -32,14 +31,7 @@ const ChatInput = ({
 
   return (
     <form ref={formRef} onSubmit={onSubmit}>
-      {file && onFileSelected && (
-        <FileUpload.File
-          className="mb-2 flex flex-row items-center gap-2 px-2"
-          name={file.name}
-          onRemove={() => onFileSelected()}
-        />
-      )}
-      <div className="flex flex-row items-center gap-10">
+      <div className="flex flex-row items-center gap-5">
         <div className="flex flex-1 items-center gap-3">
           <Textarea
             className="flex max-h-[14rem] min-h-[2.5rem] flex-1"
@@ -64,6 +56,7 @@ const ChatInput = ({
           ) : (
             <FileUpload id="file" onChange={onFileSelected} />
           )}
+          <FilesManager id="manager" />
         </div>
         <Button
           className={cn('gap-2', disabled && 'bg-neutral-300')}

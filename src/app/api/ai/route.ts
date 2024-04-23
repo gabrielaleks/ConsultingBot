@@ -1,10 +1,7 @@
-import {HNSWLib} from '@langchain/community/vectorstores/hnswlib'
-import {BaseMessage} from '@langchain/core/messages'
 import {ChatPromptTemplate} from '@langchain/core/prompts'
 import {ChatOpenAI, OpenAIEmbeddings} from '@langchain/openai'
 import {LangChainStream, StreamingTextResponse} from 'ai'
 import {ConversationalRetrievalQAChain} from 'langchain/chains'
-import {ChatMessageHistory, ConversationTokenBufferMemory} from 'langchain/memory'
 import {NextResponse} from 'next/server'
 import {z} from 'zod'
 import {MongoDBAtlasVectorSearch} from '@langchain/mongodb'
@@ -52,7 +49,7 @@ export async function POST(request: Request) {
     const {stream, handlers} = LangChainStream()
 
     const llm = new ChatOpenAI({
-      temperature: 0,
+      temperature: 1,
       openAIApiKey: process.env.OPENAI_API_KEY,
       streaming: true,
       modelName: 'gpt-3.5-turbo',
