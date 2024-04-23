@@ -51,3 +51,6 @@ vectorstore/
 */vectorstores/
 flask/src/**
 eng.**
+
+# VS Code
+.vscode
