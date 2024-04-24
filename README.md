@@ -1,5 +1,4 @@
 # fitUprising chat app
-
 This repository's baseline was pulled from the nextjs-chat-rag repository developed by Tiago Souto during his AI Series.
 
 Repository: https://github.com/soutot/ai-series/tree/main/nextjs-chat-rag
