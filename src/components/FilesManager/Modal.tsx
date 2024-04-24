@@ -1,22 +1,10 @@
 import React, { useState, useEffect, Dispatch, SetStateAction } from 'react';
 import { X, Trash2, Loader, SquarePen } from 'lucide-react'
+import { FilesManager } from '../../lib/types'
 
 interface Props {
   setOpenModal: Dispatch<SetStateAction<boolean>>
   open: boolean
-}
-
-interface File {
-  text: string;
-  embedding: number[];
-}
-
-interface FileEntry {
-  [key: string]: File[]
-}
-
-interface Files {
-  [key: string]: FileEntry;
 }
 
 async function deleteFile(fileId: string) {
@@ -37,14 +25,14 @@ async function deleteFile(fileId: string) {
 const Modal = ({ setOpenModal, open }: Props) => {
   const [isLoading, setIsLoading] = useState<boolean>(true)
   const [deletingFileIds, setDeletingFileIds] = useState<string[]>([]);
-  const [files, setFiles] = useState<Files>({})
+  const [files, setFiles] = useState<FilesManager.Files>({})
 
   useEffect(() => {
     setIsLoading(true)
     fetch('/api/files')
       .then((res) => res.json())
       .then((data) => {
-        const dataFiles: Files = data.files
+        const dataFiles: FilesManager.Files = data.files
         setFiles(dataFiles)
         setIsLoading(false)
       })
@@ -81,7 +69,7 @@ const Modal = ({ setOpenModal, open }: Props) => {
     setDeletingFileIds(prevState => [...prevState, fileId])
     try {
       await deleteFile(fileId)
-    
+
       const updatedFiles = { ...files }
       delete updatedFiles[fileId]
       setFiles(updatedFiles)

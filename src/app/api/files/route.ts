@@ -1,23 +1,11 @@
 import { NextResponse } from 'next/server';
 import { connectToDatabase, closeDatabaseConnection } from '@/app/config/database';
-
-interface File {
-  text: string;
-  embedding: number[];
-}
-
-interface FileEntry {
-  [key: string]: File[]
-}
-
-interface Files {
-  [key: string]: FileEntry;
-}
+import { FilesManager } from '../../../lib/types'
 
 export async function GET() {
   const collection = await connectToDatabase();
 
-  let files: Files = {};
+  let files: FilesManager.Files = {};
 
   try {
     const results = await collection.find({}).toArray();
