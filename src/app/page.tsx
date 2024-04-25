@@ -1,12 +1,12 @@
 'use client'
 
-import {useCompletion} from 'ai/react'
-import {Trash} from 'lucide-react'
-import {ChangeEvent, FormEvent, useEffect, useState} from 'react'
-
+import { useCompletion } from 'ai/react'
+import { Trash } from 'lucide-react'
+import { ChangeEvent, FormEvent, useEffect, useState } from 'react'
 import Chat from '@/components/Chat'
-import {Separator} from '@/components/ui/separator'
-import {useFile, useMessages} from '@/lib/store'
+import { Separator } from '@/components/ui/separator'
+import { useFile, useMessages } from '@/lib/store'
+import Alert from '@mui/material/Alert';
 
 async function uploadFile(file: File) {
   try {
@@ -17,9 +17,7 @@ async function uploadFile(file: File) {
       body: formData,
     })
 
-    if (response.ok) {
-      console.log('Embedding successful: ' + file.name)
-    } else {
+    if (!response.ok) {
       const errorResponse = await response.text()
       throw new Error(`Embedding failed: ${errorResponse}`)
     }
@@ -29,33 +27,51 @@ async function uploadFile(file: File) {
 }
 
 const Home = () => {
-  const {messages, setMessages, clearMessages} = useMessages()
-  const {clear: clearFile} = useFile()
+  const { messages, setMessages, clearMessages } = useMessages()
+  const { clear: clearFile } = useFile()
   const [isUploading, setIsUploading] = useState(false)
+  const [filesInserted, setFilesInserted] = useState(false);
 
   const handleFileSelected = async (event?: ChangeEvent<HTMLInputElement>) => {
-    if (!event) { 
-	    return clearFile()
+    if (!event) {
+      return clearFile()
     }
 
     setIsUploading(true)
 
-    const {files} = event.currentTarget
+    const { files } = event.currentTarget
 
     if (!files?.length) {
       setIsUploading(false)
       return
     }
 
-    for (var i = 0; i < files.length; i++) {
-      await uploadFile(files[i]);
+    try {
+      for (var i = 0; i < files.length; i++) {
+        await uploadFile(files[i]);
+      }
+  
+      event.target.value = ''
+      setFilesInserted(true)
+    } catch (error) {
+      throw new Error(`${error}`)
+    } finally {
+      setIsUploading(false)
     }
-    
-    setIsUploading(false)
-    event.target.value = ''
   }
 
-  const {input, setInput, handleInputChange, handleSubmit, completion, isLoading} = useCompletion({
+  useEffect(() => {
+    let timeoutId: number;
+    if (filesInserted) {
+      timeoutId = window.setTimeout(() => {
+        setFilesInserted(false);
+      }, 5000);
+    }
+
+    return () => clearTimeout(timeoutId);
+  }, [filesInserted]);
+
+  const { input, setInput, handleInputChange, handleSubmit, completion, isLoading } = useCompletion({
     api: `/api/ai`,
     headers: {
       'Content-Type': 'application/json',
@@ -98,6 +114,8 @@ const Home = () => {
         onClick={clearMessages}>
         <Trash className="h-4 w-4" /> Clear Chat
       </div>
+      {filesInserted && (<Alert className="absolute right-5" severity="success" variant="filled" onClose={() => { setFilesInserted(false) }}>File(s) uploaded!</Alert>
+      )}
     </div>
   )
 }
