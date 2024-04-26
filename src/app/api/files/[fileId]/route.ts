@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { connectToDatabase, closeDatabaseConnection } from '@/app/config/database';
+import { connectToDatabase, closeDatabaseConnection } from '@/app/utils/database';
 
 export async function DELETE(req: NextRequest, { params }: { params: { fileId: string } }) {
   const fileId = params.fileId

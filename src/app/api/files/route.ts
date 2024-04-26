@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { connectToDatabase, closeDatabaseConnection } from '@/app/config/database';
-import { FilesManager } from '../../../lib/types'
+import { connectToDatabase, closeDatabaseConnection } from '@/app/utils/database';
+import { FilesManager } from '@/lib/types';
 
 export async function GET() {
   const collection = await connectToDatabase();
