@@ -1,6 +1,6 @@
 import { RecursiveCharacterTextSplitter } from 'langchain/text_splitter'
-import { v4 as uuidv4 } from 'uuid'
 import { Document } from '@langchain/core/documents'
+import { ObjectId } from "mongodb";
 
 export async function generateSplitDocumentsFromFile(file: File) {
   const splitDocs = await splitTextIntoDocuments(file)
@@ -21,7 +21,7 @@ async function splitTextIntoDocuments(file: File) {
 }
 
 async function formatDocuments(splitDocs: Document<Record<string, any>>[], file: File) {
-  const fileId = uuidv4()
+  const fileId = new ObjectId().toString();
   const addedOn = new Date(Date.now()).toISOString()
 
   splitDocs.forEach(doc => {
