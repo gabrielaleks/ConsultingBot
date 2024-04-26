@@ -1,20 +1,22 @@
-import {ChatPromptTemplate} from '@langchain/core/prompts'
-import {ChatOpenAI, OpenAIEmbeddings} from '@langchain/openai'
-import {LangChainStream, StreamingTextResponse} from 'ai'
-import {ConversationalRetrievalQAChain} from 'langchain/chains'
-import {NextResponse} from 'next/server'
-import {z} from 'zod'
-import {MongoDBAtlasVectorSearch} from '@langchain/mongodb'
-import {MongoClient} from 'mongodb'
+import { LangChainStream, StreamingTextResponse } from 'ai'
+import { NextResponse } from 'next/server'
+import { z } from 'zod'
+import { connectToDatabase } from '@/app/utils/database';
+import { initializeOpenAIEmbeddings, initializeChatOpenAI } from '@/app/utils/openAi'
+import { initializeMongoDBVectorStore } from '@/app/utils/vectorStore'
+import { initializeQAChainFromLLM } from '@/app/utils/chain'
+import { BufferMemory } from "langchain/memory";
+import { BaseMessage } from '@langchain/core/messages';
 
-const QA_PROMPT_TEMPLATE = `You are a good assistant that answers questions. Your knowledge is strictly limited to the following piece of context. Use it to answer the question at the end.
-  If the answer can't be found in the context, just say you don't know. *DO NOT* try to make up an answer.
-  If the question is not related to the context, politely respond that you are tuned to only answer questions that are related to the context.
-  Give a response in the same language as the question.
-  
-  Context: """"{context}"""
+const QA_PROMPT_TEMPLATE = `You are an expert in matters related to health, well-being and how to lose weight.
+  Your knowledge is limited to context provided and to the history of the conversation. Use it not only to answer questions, but also to make conversations with the other person.
+  Give a response in the same language as the question. Do not make stuff up!
 
-  Question: """{question}"""
+  Chat history : {chat_history}
+
+  Context: {context}
+
+  Question: {question}
   Helpful answer in markdown:`
 
 export async function POST(request: Request) {
@@ -23,55 +25,25 @@ export async function POST(request: Request) {
     prompt: z.string(),
   })
 
-  const {prompt} = bodySchema.parse(body)
+  const { prompt } = bodySchema.parse(body)
 
   try {
-    const embeddings = new OpenAIEmbeddings({
-      openAIApiKey: process.env.OPENAI_API_KEY,
-    })
-
-    const client = new MongoClient(process.env.MONGODB_ATLAS_URI || "")
-    const dbName = 'docs'
-    const collectionName = 'embeddings'
-    const collection = client.db(dbName).collection(collectionName)
-
-    const vectorStore = new MongoDBAtlasVectorSearch(
-        embeddings, {
-            collection,
-            indexName: "default",
-            textKey: "text",
-            embeddingKey: "embedding"
-        }
-    )
-
+    const embeddings = initializeOpenAIEmbeddings()
+    const collection = await connectToDatabase()
+    const vectorStore = initializeMongoDBVectorStore(embeddings, collection)
     const retriever = vectorStore.asRetriever()
-    
-    const {stream, handlers} = LangChainStream()
+    const { stream, handlers } = LangChainStream()
+    const llm = initializeChatOpenAI(handlers)
 
-    const llm = new ChatOpenAI({
-      temperature: 1,
-      openAIApiKey: process.env.OPENAI_API_KEY,
-      streaming: true,
-      modelName: 'gpt-3.5-turbo',
-      callbacks: [handlers],
-    })
-
-    const chain = ConversationalRetrievalQAChain.fromLLM(llm, retriever, {
-      returnSourceDocuments: true,
-      qaChainOptions: {
-        type: 'stuff',
-        prompt: ChatPromptTemplate.fromTemplate(QA_PROMPT_TEMPLATE),
-      },
-    })
-
-    chain.invoke({question: prompt, chat_history: ''})
+    const chain = initializeQAChainFromLLM(llm, retriever, QA_PROMPT_TEMPLATE)
+    chain.invoke({ question: prompt, chat_history: '' })
 
     return new StreamingTextResponse(stream)
   } catch (error) {
     console.log('error', error)
-    return new NextResponse(JSON.stringify({error}), {
+    return new NextResponse(JSON.stringify({ error }), {
       status: 500,
-      headers: {'content-type': 'application/json'},
+      headers: { 'content-type': 'application/json' },
     })
   }
 }
