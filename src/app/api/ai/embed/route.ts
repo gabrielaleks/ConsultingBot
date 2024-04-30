@@ -1,6 +1,6 @@
-import { initializeOpenAIEmbeddings} from '@/app/utils/openAi'
+import { initializeOpenAIEmbeddings } from '@/app/utils/model'
 import { NextResponse } from 'next/server'
-import { connectToDatabase, closeDatabaseConnection } from '@/app/utils/database';
+import { getDatabaseConnectionToCollection, closeDatabaseConnection } from '@/app/utils/database';
 import { initializeMongoDBVectorStore } from '@/app/utils/vectorStore'
 import { generateSplitDocumentsFromFile } from '@/app/utils/textSplitter';
 
@@ -14,7 +14,7 @@ export async function POST(request: Request) {
 
   const splitDocs = await generateSplitDocumentsFromFile(file)
   const embeddings = initializeOpenAIEmbeddings()
-  const collection = await connectToDatabase();
+  const collection = await getDatabaseConnectionToCollection('embeddings');
   const vectorStore = initializeMongoDBVectorStore(embeddings, collection)
   await vectorStore.addDocuments(splitDocs)
   await closeDatabaseConnection();

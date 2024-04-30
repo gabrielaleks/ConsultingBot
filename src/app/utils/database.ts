@@ -1,12 +1,13 @@
 import { MongoClient } from 'mongodb';
 
-const client = new MongoClient(process.env.MONGODB_ATLAS_URI || '');
+const client = new MongoClient(process.env.MONGODB_ATLAS_URI || "", {
+  driverInfo: { name: "langchainjs" },
+});
 const dbName = 'docs';
-const collectionName = 'embeddings';
 
-export async function connectToDatabase() {
+export async function getDatabaseConnectionToCollection(collection: string) {
   await client.connect();
-  return client.db(dbName).collection(collectionName);
+  return client.db(dbName).collection(collection);
 }
 
 export async function closeDatabaseConnection() {

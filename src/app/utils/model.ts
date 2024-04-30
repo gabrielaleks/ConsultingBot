@@ -6,12 +6,11 @@ export function initializeOpenAIEmbeddings() {
   });
 }
 
-export function initializeChatOpenAI(handlers: any) {
+export function initializeChatOpenAI() {
   return new ChatOpenAI({
-    temperature: 1,
+    temperature: 0.5,
     openAIApiKey: process.env.OPENAI_API_KEY,
     streaming: true,
-    modelName: 'gpt-3.5-turbo',
-    callbacks: [handlers],
+    modelName: 'gpt-3.5-turbo'
   });
 }

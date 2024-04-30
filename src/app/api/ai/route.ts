@@ -1,23 +1,16 @@
-import { LangChainStream, StreamingTextResponse } from 'ai'
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
-import { connectToDatabase } from '@/app/utils/database';
-import { initializeOpenAIEmbeddings, initializeChatOpenAI } from '@/app/utils/openAi'
+import { getDatabaseConnectionToCollection } from '@/app/utils/database';
+import { initializeOpenAIEmbeddings, initializeChatOpenAI } from '@/app/utils/model'
 import { initializeMongoDBVectorStore } from '@/app/utils/vectorStore'
-import { initializeQAChainFromLLM } from '@/app/utils/chain'
-import { BufferMemory } from "langchain/memory";
-import { BaseMessage } from '@langchain/core/messages';
+import { MongoDBChatMessageHistory } from '@langchain/mongodb';
+import { assignRetrieverToRunnable, getRunnableWithMessageHistory, getRunnableFromProperties } from '@/app/utils/runnables';
 
-const QA_PROMPT_TEMPLATE = `You are an expert in matters related to health, well-being and how to lose weight.
-  Your knowledge is limited to context provided and to the history of the conversation. Use it not only to answer questions, but also to make conversations with the other person.
-  Give a response in the same language as the question. Do not make stuff up!
+const STANDALONE_PROMPT_TEMPLATE = `Your knowledge is limited to context provided and to the history of the conversation.
+  Use it not only to answer questions, but also to make conversations with the other person.
+  Give a response in the same language as the question. Do not make stuff up!`
 
-  Chat history : {chat_history}
-
-  Context: {context}
-
-  Question: {question}
-  Helpful answer in markdown:`
+const RAG_SYSTEM_PROMPT = `Take into consideration, when answering the question, the following context: {context}`;
 
 export async function POST(request: Request) {
   const body = await request.json()
@@ -28,17 +21,34 @@ export async function POST(request: Request) {
   const { prompt } = bodySchema.parse(body)
 
   try {
+    const historyCollection = await getDatabaseConnectionToCollection('history')
+    const documentsCollection = await getDatabaseConnectionToCollection('embeddings')
+    const sessionId = 'my-session' // Should be dynamic for each user
+
+    const model = initializeChatOpenAI()
+
     const embeddings = initializeOpenAIEmbeddings()
-    const collection = await connectToDatabase()
-    const vectorStore = initializeMongoDBVectorStore(embeddings, collection)
+    const vectorStore = initializeMongoDBVectorStore(embeddings, documentsCollection)
     const retriever = vectorStore.asRetriever()
-    const { stream, handlers } = LangChainStream()
-    const llm = initializeChatOpenAI(handlers)
 
-    const chain = initializeQAChainFromLLM(llm, retriever, QA_PROMPT_TEMPLATE)
-    chain.invoke({ question: prompt, chat_history: '' })
+    const questionRunnable = getRunnableFromProperties(STANDALONE_PROMPT_TEMPLATE, model)
+    const retrieverRunnable = assignRetrieverToRunnable(questionRunnable, retriever)
+    const ragRunnable = getRunnableFromProperties(RAG_SYSTEM_PROMPT, model, retrieverRunnable)
 
-    return new StreamingTextResponse(stream)
+    const chatHistory = new MongoDBChatMessageHistory({
+      collection: historyCollection,
+      sessionId
+    })
+
+    const RunnableWithMessageHistory = getRunnableWithMessageHistory(ragRunnable, chatHistory)
+
+    const stream = await RunnableWithMessageHistory.stream({ question: prompt }, { configurable: { sessionId: sessionId } })
+
+    return new NextResponse(stream, {
+      headers: {
+        'Content-Type': 'text/plain; charset=utf-8',
+      },
+    })
   } catch (error) {
     console.log('error', error)
     return new NextResponse(JSON.stringify({ error }), {
