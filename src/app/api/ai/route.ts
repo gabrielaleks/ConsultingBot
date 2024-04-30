@@ -1,21 +1,16 @@
-import {ChatPromptTemplate} from '@langchain/core/prompts'
-import {ChatOpenAI, OpenAIEmbeddings} from '@langchain/openai'
-import {LangChainStream, StreamingTextResponse} from 'ai'
-import {ConversationalRetrievalQAChain} from 'langchain/chains'
-import {NextResponse} from 'next/server'
-import {z} from 'zod'
-import {MongoDBAtlasVectorSearch} from '@langchain/mongodb'
-import {MongoClient} from 'mongodb'
+import { NextResponse } from 'next/server'
+import { z } from 'zod'
+import { getDatabaseConnectionToCollection } from '@/app/utils/database';
+import { initializeOpenAIEmbeddings, initializeChatOpenAI } from '@/app/utils/model'
+import { initializeMongoDBVectorStore } from '@/app/utils/vectorStore'
+import { MongoDBChatMessageHistory } from '@langchain/mongodb';
+import { assignRetrieverToRunnable, getRunnableWithMessageHistory, getRunnableFromProperties } from '@/app/utils/runnables';
 
-const QA_PROMPT_TEMPLATE = `You are a good assistant that answers questions. Your knowledge is strictly limited to the following piece of context. Use it to answer the question at the end.
-  If the answer can't be found in the context, just say you don't know. *DO NOT* try to make up an answer.
-  If the question is not related to the context, politely respond that you are tuned to only answer questions that are related to the context.
-  Give a response in the same language as the question.
-  
-  Context: """"{context}"""
+const STANDALONE_PROMPT_TEMPLATE = `Your knowledge is limited to context provided and to the history of the conversation.
+  Use it not only to answer questions, but also to make conversations with the other person.
+  Give a response in the same language as the question. Do not make stuff up!`
 
-  Question: """{question}"""
-  Helpful answer in markdown:`
+const RAG_SYSTEM_PROMPT = `Take into consideration, when answering the question, the following context: {context}`;
 
 export async function POST(request: Request) {
   const body = await request.json()
@@ -23,55 +18,42 @@ export async function POST(request: Request) {
     prompt: z.string(),
   })
 
-  const {prompt} = bodySchema.parse(body)
+  const { prompt } = bodySchema.parse(body)
 
   try {
-    const embeddings = new OpenAIEmbeddings({
-      openAIApiKey: process.env.OPENAI_API_KEY,
-    })
+    const historyCollection = await getDatabaseConnectionToCollection('history')
+    const documentsCollection = await getDatabaseConnectionToCollection('embeddings')
+    const sessionId = 'my-session' // Should be dynamic for each user
 
-    const client = new MongoClient(process.env.MONGODB_ATLAS_URI || "")
-    const dbName = 'docs'
-    const collectionName = 'embeddings'
-    const collection = client.db(dbName).collection(collectionName)
+    const model = initializeChatOpenAI()
 
-    const vectorStore = new MongoDBAtlasVectorSearch(
-        embeddings, {
-            collection,
-            indexName: "default",
-            textKey: "text",
-            embeddingKey: "embedding"
-        }
-    )
-
+    const embeddings = initializeOpenAIEmbeddings()
+    const vectorStore = initializeMongoDBVectorStore(embeddings, documentsCollection)
     const retriever = vectorStore.asRetriever()
-    
-    const {stream, handlers} = LangChainStream()
 
-    const llm = new ChatOpenAI({
-      temperature: 1,
-      openAIApiKey: process.env.OPENAI_API_KEY,
-      streaming: true,
-      modelName: 'gpt-3.5-turbo',
-      callbacks: [handlers],
+    const questionRunnable = getRunnableFromProperties(STANDALONE_PROMPT_TEMPLATE, model)
+    const retrieverRunnable = assignRetrieverToRunnable(questionRunnable, retriever)
+    const ragRunnable = getRunnableFromProperties(RAG_SYSTEM_PROMPT, model, retrieverRunnable)
+
+    const chatHistory = new MongoDBChatMessageHistory({
+      collection: historyCollection,
+      sessionId
     })
 
-    const chain = ConversationalRetrievalQAChain.fromLLM(llm, retriever, {
-      returnSourceDocuments: true,
-      qaChainOptions: {
-        type: 'stuff',
-        prompt: ChatPromptTemplate.fromTemplate(QA_PROMPT_TEMPLATE),
+    const RunnableWithMessageHistory = getRunnableWithMessageHistory(ragRunnable, chatHistory)
+
+    const stream = await RunnableWithMessageHistory.stream({ question: prompt }, { configurable: { sessionId: sessionId } })
+
+    return new NextResponse(stream, {
+      headers: {
+        'Content-Type': 'text/plain; charset=utf-8',
       },
     })
-
-    chain.invoke({question: prompt, chat_history: ''})
-
-    return new StreamingTextResponse(stream)
   } catch (error) {
     console.log('error', error)
-    return new NextResponse(JSON.stringify({error}), {
+    return new NextResponse(JSON.stringify({ error }), {
       status: 500,
-      headers: {'content-type': 'application/json'},
+      headers: { 'content-type': 'application/json' },
     })
   }
 }

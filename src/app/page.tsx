@@ -50,7 +50,7 @@ const Home = () => {
       for (var i = 0; i < files.length; i++) {
         await uploadFile(files[i]);
       }
-  
+
       event.target.value = ''
       setFilesInserted(true)
     } catch (error) {
@@ -71,11 +71,29 @@ const Home = () => {
     return () => clearTimeout(timeoutId);
   }, [filesInserted]);
 
-  const { input, setInput, handleInputChange, handleSubmit, completion, isLoading } = useCompletion({
+  const { input, setInput, handleInputChange, handleSubmit, isLoading } = useCompletion({
     api: `/api/ai`,
     headers: {
       'Content-Type': 'application/json',
     },
+    onResponse: async (res) => {
+      if (res.status !== 200) throw new Error(res.statusText)
+
+      const data = res.body;
+      if (!data) return;
+
+      const reader = data.getReader();
+      const decoder = new TextDecoder();
+      let done = false;
+      let accumulatedContent = '';
+      while (!done) {
+        const { value, done: doneReading } = await reader.read();
+        done = doneReading;
+        const chunkValue = decoder.decode(value);
+        accumulatedContent += chunkValue;
+        setMessages('AI', accumulatedContent)
+      }
+    }
   })
 
   const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
@@ -84,15 +102,9 @@ const Home = () => {
       return
     }
     Promise.all([handleSubmit(e)])
-
     setMessages('USER', input)
     setInput('')
   }
-
-  useEffect(() => {
-    if (!completion || !isLoading) return
-    setMessages('AI', completion)
-  }, [setMessages, completion, isLoading])
 
   return (
     <div className="z-10 flex h-screen flex-col gap-5 p-5">

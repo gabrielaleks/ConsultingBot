@@ -1,6 +1,6 @@
 import React, { useState, useEffect, Dispatch, SetStateAction } from 'react';
 import { X, Trash2, Loader, SquarePen } from 'lucide-react'
-import { FilesManager } from '../../lib/types'
+import { FilesManager } from '@/lib/types';
 
 interface Props {
   setOpenModal: Dispatch<SetStateAction<boolean>>

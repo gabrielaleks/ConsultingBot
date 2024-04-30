@@ -1,14 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import { connectToDatabase, closeDatabaseConnection } from '@/app/config/database';
+import {
+  getDatabaseConnectionToCollection,
+  closeDatabaseConnection
+} from '@/app/utils/database';
 
 export async function DELETE(req: NextRequest, { params }: { params: { fileId: string } }) {
   const fileId = params.fileId
-  
+
   if (!fileId) {
     return NextResponse.json({ error: 'File ID is required.', status: 400 });
   }
 
-  const collection = await connectToDatabase();
+  const collection = await getDatabaseConnectionToCollection('embeddings');
 
   try {
     const result = await collection.deleteMany({ 'file.id': fileId });
