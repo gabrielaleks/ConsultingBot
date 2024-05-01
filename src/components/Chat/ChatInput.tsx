@@ -61,7 +61,7 @@ const ChatInput = ({
         <Button
           className={cn('gap-2', disabled && 'bg-neutral-300')}
           type="submit"
-          disabled={disabled || isUploading}>
+          disabled={!value || disabled || isUploading}>
           Send <Send className="h-3 w-3" />
         </Button>
       </div>
