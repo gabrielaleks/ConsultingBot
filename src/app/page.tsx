@@ -1,12 +1,13 @@
 'use client'
 
 import { useCompletion } from 'ai/react'
-import { Trash } from 'lucide-react'
+import { Trash, Bomb } from 'lucide-react'
 import { ChangeEvent, FormEvent, useEffect, useState } from 'react'
 import Chat from '@/components/Chat'
 import { Separator } from '@/components/ui/separator'
 import { useFile, useMessages } from '@/lib/store'
 import Alert from '@mui/material/Alert';
+import PurgeHistory from '@/components/PurgeHistory'
 
 async function uploadFile(file: File) {
   try {
@@ -30,7 +31,17 @@ const Home = () => {
   const { messages, setMessages, clearMessages } = useMessages()
   const { clear: clearFile } = useFile()
   const [isUploading, setIsUploading] = useState(false)
-  const [filesInserted, setFilesInserted] = useState(false);
+  const [filesInserted, setFilesInserted] = useState(false)
+  const [purgeAlertOpen, setPurgeAlertOpen] = useState(false);
+
+  const handlePurgeAlertOpen = () => {
+    setPurgeAlertOpen(!purgeAlertOpen);
+  };
+
+  const handlePurgeComplete = () => {
+    setPurgeAlertOpen(false);
+    clearMessages();
+  };
 
   const handleFileSelected = async (event?: ChangeEvent<HTMLInputElement>) => {
     if (!event) {
@@ -121,13 +132,21 @@ const Home = () => {
         onFileSelected={handleFileSelected}
         isUploading={isUploading}
       />
-      <div
-        className="flex cursor-pointer items-center gap-2 text-xs text-red-500 mr-auto"
-        onClick={clearMessages}>
-        <Trash className="h-4 w-4" /> Clear Chat
+      <div className="flex items-center text-xs gap-5">
+        <div
+          className="flex cursor-pointer gap-1 text-xs text-red-500 hover:text-red-700"
+          onClick={clearMessages}>
+          <Trash className="h-4 w-4" /> Clear Chat
+        </div>
+        <div
+          className="flex cursor-pointer gap-1 text-xs text-blue-500 hover:text-blue-700"
+          onClick={handlePurgeAlertOpen}>
+          <Bomb className="h-4 w-4" /> Purge History
+        </div>
       </div>
       {filesInserted && (<Alert className="absolute right-5" severity="success" variant="filled" onClose={() => { setFilesInserted(false) }}>File(s) uploaded!</Alert>
       )}
+      {purgeAlertOpen && <PurgeHistory purgeAlertOpen={purgeAlertOpen} setPurgeAlertOpen={setPurgeAlertOpen} onPurgeComplete={handlePurgeComplete} />}
     </div>
   )
 }
