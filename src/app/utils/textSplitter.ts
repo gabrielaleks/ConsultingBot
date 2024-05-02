@@ -12,7 +12,7 @@ async function splitTextIntoDocuments(file: File) {
   const fileContent = await file.text()
 
   const textSplitter = new RecursiveCharacterTextSplitter({
-    chunkSize: 1000,
+    chunkSize: 500,
     chunkOverlap: 100,
   })
 
