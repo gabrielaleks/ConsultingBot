@@ -1,8 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import {
-  getDatabaseConnectionToCollection,
-  closeDatabaseConnection
-} from '@/app/utils/database';
+import { getDatabaseConnectionToCollection } from '@/app/utils/database';
 
 export async function DELETE(req: NextRequest, { params }: { params: { fileId: string } }) {
   const fileId = params.fileId
@@ -11,9 +8,8 @@ export async function DELETE(req: NextRequest, { params }: { params: { fileId: s
     return NextResponse.json({ error: 'File ID is required.', status: 400 });
   }
 
-  const collection = await getDatabaseConnectionToCollection('embeddings');
-
   try {
+    const collection = await getDatabaseConnectionToCollection('embeddings');
     const result = await collection.deleteMany({ 'file.id': fileId });
 
     if (result.deletedCount === 0) {
@@ -26,7 +22,5 @@ export async function DELETE(req: NextRequest, { params }: { params: { fileId: s
   } catch (error) {
     console.error('Error deleting file:', error);
     return NextResponse.json({ message: 'An error occurred while deleting the file.' }, { status: 400 });
-  } finally {
-    await closeDatabaseConnection();
   }
 }

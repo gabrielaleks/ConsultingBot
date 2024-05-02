@@ -1,6 +1,6 @@
 import { initializeOpenAIEmbeddings } from '@/app/utils/model'
 import { NextResponse } from 'next/server'
-import { getDatabaseConnectionToCollection, closeDatabaseConnection } from '@/app/utils/database';
+import { getDatabaseConnectionToCollection } from '@/app/utils/database';
 import { initializeMongoDBVectorStore } from '@/app/utils/vectorStore'
 import { generateSplitDocumentsFromFile } from '@/app/utils/textSplitter';
 
@@ -12,12 +12,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: 'Missing file input', success: false })
   }
 
-  const splitDocs = await generateSplitDocumentsFromFile(file)
-  const embeddings = initializeOpenAIEmbeddings()
-  const collection = await getDatabaseConnectionToCollection('embeddings');
-  const vectorStore = initializeMongoDBVectorStore(embeddings, collection)
-  await vectorStore.addDocuments(splitDocs)
-  await closeDatabaseConnection();
+  try { 
+    const splitDocs = await generateSplitDocumentsFromFile(file)
+    const embeddings = initializeOpenAIEmbeddings()
+    const collection = await getDatabaseConnectionToCollection('embeddings');
+    const vectorStore = initializeMongoDBVectorStore(embeddings, collection)
+    await vectorStore.addDocuments(splitDocs)
+  } catch (error) {
+    console.error('Error during embedding:', error);
+    return NextResponse.json({ message: 'An error occurred during embedding.' }, { status: 400 });
+  }
 
   return new NextResponse(JSON.stringify({ success: true }), {
     status: 200,

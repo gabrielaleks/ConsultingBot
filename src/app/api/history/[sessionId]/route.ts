@@ -1,4 +1,4 @@
-import { closeDatabaseConnection, getDatabaseConnectionToCollection } from "@/app/utils/database";
+import { getDatabaseConnectionToCollection } from "@/app/utils/database";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function DELETE(req: NextRequest, { params }: { params: { sessionId: string } }) {
@@ -8,9 +8,8 @@ export async function DELETE(req: NextRequest, { params }: { params: { sessionId
     return NextResponse.json({ error: 'Session ID is required.', status: 400 });
   }
 
-  const historyCollection = await getDatabaseConnectionToCollection('history');
-
   try {
+    const historyCollection = await getDatabaseConnectionToCollection('history');
     const result = await historyCollection.deleteOne({ sessionId: sessionId });
 
     if (result.deletedCount === 0) {
@@ -23,7 +22,5 @@ export async function DELETE(req: NextRequest, { params }: { params: { sessionId
   } catch (error) {
     console.error('Error deleting file:', error);
     return NextResponse.json({ message: 'An error occurred while deleting the history.' }, { status: 400 });
-  } finally {
-    await closeDatabaseConnection();
   }
 }

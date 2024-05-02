@@ -70,9 +70,11 @@ const Modal = ({ setOpenModal, open }: Props) => {
     try {
       await deleteFile(fileId)
 
-      const updatedFiles = { ...files }
-      delete updatedFiles[fileId]
-      setFiles(updatedFiles)
+      setFiles(prevFiles => {
+        const updatedFiles = { ...prevFiles };
+        delete updatedFiles[fileId];
+        return updatedFiles;
+      });
     } catch (error) {
       throw new Error(`Error: ${error}`)
     } finally {
