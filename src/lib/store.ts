@@ -53,7 +53,7 @@ export const useMessages = create(
     }),
     {
       name: 'messages', // name of the item in the storage (must be unique)
-      storage: createJSONStorage(() => sessionStorage), // (optional) by default, 'localStorage' is used
+      storage: createJSONStorage(() => localStorage), // (optional) by default, 'localStorage' is used
       skipHydration: true,
     }
   )
@@ -89,3 +89,15 @@ export const useFile = create(
     }
   )
 )
+
+export function saveSessionId(sessionId: string) {
+  localStorage.setItem('sessionId', sessionId);
+}
+
+export function generateSessionId(): string {
+  return generateRandomId()
+}
+
+export function getSessionId(): string | null {
+  return localStorage.getItem('sessionId');
+}

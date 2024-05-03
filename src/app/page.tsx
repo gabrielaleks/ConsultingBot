@@ -5,7 +5,7 @@ import { Trash, Bomb } from 'lucide-react'
 import { ChangeEvent, FormEvent, useEffect, useState } from 'react'
 import Chat from '@/components/Chat'
 import { Separator } from '@/components/ui/separator'
-import { useFile, useMessages } from '@/lib/store'
+import { generateSessionId, getSessionId, saveSessionId, useFile, useMessages } from '@/lib/store'
 import Alert from '@mui/material/Alert';
 import PurgeHistory from '@/components/PurgeHistory'
 
@@ -33,6 +33,7 @@ const Home = () => {
   const [isUploading, setIsUploading] = useState(false)
   const [filesInserted, setFilesInserted] = useState(false)
   const [purgeAlertOpen, setPurgeAlertOpen] = useState(false);
+  const [sessionId, setSessionId] = useState('');
 
   const handlePurgeAlertOpen = () => {
     setPurgeAlertOpen(!purgeAlertOpen);
@@ -82,10 +83,22 @@ const Home = () => {
     return () => clearTimeout(timeoutId);
   }, [filesInserted]);
 
+  useEffect(() => {
+    let sessionId = getSessionId()
+    if (!sessionId) {
+      sessionId = generateSessionId()
+      saveSessionId(sessionId)
+    }
+    setSessionId(sessionId)
+  }, [sessionId])
+
   const { input, setInput, handleInputChange, handleSubmit, isLoading } = useCompletion({
     api: `/api/ai`,
     headers: {
       'Content-Type': 'application/json',
+    },
+    body: {
+      sessionId: sessionId
     },
     onResponse: async (res) => {
       if (res.status !== 200) throw new Error(res.statusText)
