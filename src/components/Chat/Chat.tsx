@@ -1,13 +1,16 @@
-import {memo, useEffect, useRef} from 'react'
+import { memo, useEffect, useRef } from 'react'
 
 import Avatar from '../Avatar'
 import Message from '../Message'
-import {TMessage} from '../Message/Message'
+import { TMessage } from '../Message/Message'
+import { Dot } from 'lucide-react'
 
 type Props = {
-  messages: TMessage[]
+  messages: TMessage[],
+  isLoading: boolean,
+  isStreaming: boolean
 }
-const Chat = ({messages}: Props) => {
+const Chat = ({ messages, isLoading, isStreaming }: Props) => {
   const scrollableContentRef = useRef<HTMLElement>(null)
 
   useEffect(() => {
@@ -32,6 +35,14 @@ const Chat = ({messages}: Props) => {
           {message.creator === 'USER' ? <Avatar.User /> : null}
         </Message>
       ))}
+
+      {isLoading && !isStreaming ?
+        <div className='flex items-center'>
+          <Avatar.Bot />
+          <Dot size={60} className='animate-ping duration-700' />
+        </div>
+        : null
+      }
     </main>
   )
 }
