@@ -6,6 +6,7 @@ import DialogContentText from '@mui/material/DialogContentText';
 import DialogTitle from '@mui/material/DialogTitle';
 import { Button } from '@mui/material'
 import { Loader } from 'lucide-react'
+import { getSessionId } from '@/lib/store';
 
 interface Props {
   setPurgeAlertOpen: Dispatch<SetStateAction<boolean>>
@@ -35,9 +36,15 @@ const PurgeHistory = ({ setPurgeAlertOpen, purgeAlertOpen, onPurgeComplete }: Pr
   const [isPurging, setIsPurging] = useState(false)
 
   const handleProceedPurgeHistory = async () => {
+    const sessionId = getSessionId()
+
+    if (!sessionId) {
+      throw new Error('No Session ID currently defined!')
+    }
+    
     try {
       setIsPurging(true)
-      await purgeHistory('my-session') // should be dynamic
+      await purgeHistory(sessionId)
       onPurgeComplete()
     } catch (error) {
       throw new Error(`${error}`)

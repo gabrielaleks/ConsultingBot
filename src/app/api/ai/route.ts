@@ -16,14 +16,14 @@ export async function POST(request: Request) {
   const body = await request.json()
   const bodySchema = z.object({
     prompt: z.string(),
+    sessionId: z.string()
   })
 
-  const { prompt } = bodySchema.parse(body)
+  const { prompt, sessionId } = bodySchema.parse(body)
 
   try {
     const historyCollection = await getDatabaseConnectionToCollection('history')
     const documentsCollection = await getDatabaseConnectionToCollection('embeddings')
-    const sessionId = 'my-session' // Should be dynamic for each user
 
     const model = initializeChatOpenAI()
 
