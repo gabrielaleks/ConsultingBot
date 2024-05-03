@@ -32,8 +32,9 @@ const Home = () => {
   const { clear: clearFile } = useFile()
   const [isUploading, setIsUploading] = useState(false)
   const [filesInserted, setFilesInserted] = useState(false)
-  const [purgeAlertOpen, setPurgeAlertOpen] = useState(false);
-  const [sessionId, setSessionId] = useState('');
+  const [purgeAlertOpen, setPurgeAlertOpen] = useState(false)
+  const [sessionId, setSessionId] = useState('')
+  const [isStreaming, setIsStreaming] = useState(false)
 
   const handlePurgeAlertOpen = () => {
     setPurgeAlertOpen(!purgeAlertOpen);
@@ -108,15 +109,16 @@ const Home = () => {
 
       const reader = data.getReader();
       const decoder = new TextDecoder();
-      let done = false;
       let accumulatedContent = '';
-      while (!done) {
-        const { value, done: doneReading } = await reader.read();
-        done = doneReading;
+      setIsStreaming(true)
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
         const chunkValue = decoder.decode(value);
         accumulatedContent += chunkValue;
         setMessages('AI', accumulatedContent)
       }
+      setIsStreaming(false)
     }
   })
 
@@ -135,7 +137,11 @@ const Home = () => {
       <header className="flex items-center justify-between border-b px-6 py-3">
         <h1 className="text-xl font-bold">Chat App</h1>
       </header>
-      <Chat messages={messages} />
+      <Chat
+        messages={messages}
+        isLoading={isLoading}
+        isStreaming={isStreaming}
+      />
       <Separator />
       <Chat.Input
         onChange={handleInputChange}
