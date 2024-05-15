@@ -6,11 +6,17 @@ import { initializeMongoDBVectorStore } from '@/app/utils/vectorStore'
 import { MongoDBChatMessageHistory } from '@langchain/mongodb';
 import { assignRetrieverToRunnable, getRunnableWithMessageHistory, getRunnableFromProperties } from '@/app/utils/runnables';
 
-const STANDALONE_PROMPT_TEMPLATE = `Your knowledge is limited to context provided and to the history of the conversation.
-  Use it not only to answer questions, but also to make conversations with the other person.
-  Give a response in the same language as the question. Do not make stuff up!`
+const STANDALONE_PROMPT_TEMPLATE = `
+Given a chat history and a follow-up question, rephrase the follow-up question to be a standalone question.
+Do NOT answer the question, just reformulate it if needed, otherwise return it as is.
+Only return the final standalone question.`
 
-const RAG_SYSTEM_PROMPT = `Take into consideration, when answering the question, the following context: {context}`;
+const RAG_SYSTEM_PROMPT = `
+You are an AI bot specialized in talking with humans about day-to-day things.
+Your knowledge is purely limited to the context provided and to the history of the conversation.
+Do not make things up! If you do not know the answer, be honest and say that you don't know.
+Give a response in the same language as the question.
+Take into consideration, when answering the question, the following context: {context}`;
 
 export async function POST(request: Request) {
   const body = await request.json()

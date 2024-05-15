@@ -44,9 +44,9 @@ next-env.d.ts
 /public/tmp/*
 
 # python
-*/venv/**/*
+venv
 __pycache__
-
+resources
 vectorstore/
 */vectorstores/
 flask/src/**
