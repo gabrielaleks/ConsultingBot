@@ -59,6 +59,7 @@ async function generateFileFromWav(wav: File) {
     // Call python script
     const baseAudioFileName = wav.name.split('.')[0]
     await executePythonScript(currentDir, baseAudioFileName, uuid);
+    console.log('Python process completed.');
 
     // Create File from Text file with its path
     const file = await generateFileFromTxt(baseAudioFileName, fileResourcesDir)
@@ -88,8 +89,6 @@ async function executePythonScript(currentDir: string, baseAudioFileName: string
     pythonProcess.stdout.on('data', (data) => {
       console.log(data.toString('utf-8'));
     });
-
-    console.log('Python process completed.');
   });
 }
 
