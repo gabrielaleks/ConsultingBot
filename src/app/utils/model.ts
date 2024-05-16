@@ -11,7 +11,7 @@ export function initializeChatOpenAI() {
     modelName: 'gpt-3.5-turbo',
     openAIApiKey: process.env.OPENAI_API_KEY,
     // Between 0 and 1. Lower value are deterministic, while higher are random
-    temperature: 0.5,
+    temperature: 0,
     // If true, tokens will be sent as server-sent events as they become available
     streaming: true,
     // Max number of tokes to be generated in chat completion
