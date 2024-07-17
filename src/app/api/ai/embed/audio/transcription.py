@@ -85,6 +85,10 @@ def run(base_audio_file_name, uuid):
     start_time = time.perf_counter()
 
     audio_base_path = os.getenv("AUDIO_BASE_PATH")
+
+    if not audio_base_path or not isinstance(audio_base_path, str):
+        raise ValueError("AUDIO_BASE_PATH environment variable is not set or not a string")
+
     resources_path = os.path.join(audio_base_path, "resources", uuid)
 
     diarizations_path = os.path.join(resources_path, "diarizations")
@@ -95,7 +99,7 @@ def run(base_audio_file_name, uuid):
         resources_path, "transcription", base_audio_file_name + ".txt"
     )
 
-    openai_key = os.getenv("OPENAI_KEY")
+    openai_key = os.getenv("OPENAI_API_KEY")
     huggingface_key = os.getenv("HUGGINGFACE_API_KEY")
 
     pipeline = Pipeline.from_pretrained(
@@ -129,4 +133,3 @@ def run(base_audio_file_name, uuid):
 
 base_audio_file_name = sys.argv[1]
 uuid = sys.argv[2]
-run(base_audio_file_name, uuid)

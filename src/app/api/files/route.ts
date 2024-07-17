@@ -6,8 +6,9 @@ export async function GET() {
   let files: FilesManager.Files = {};
   try {
     const collection = await getDatabaseConnectionToCollection('embeddings');
-    const results = await collection.find({}).toArray();
-    results.forEach(result => {
+    const cursor = collection.find().stream();
+
+    for await (const result of cursor) {
       const { text, embedding, file } = result;
       const { name, id } = file;
       if (!files[id]) {
@@ -17,7 +18,7 @@ export async function GET() {
         files[id][name] = [];
       }
       files[id][name].push({ text, embedding });
-    });
+    }
   } catch (err) {
     console.error('Error fetching documents:', err);
     return NextResponse.json({ message: 'An error occurred during fetching of documents.' }, { status: 400 });

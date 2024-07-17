@@ -12,6 +12,7 @@
   "dependencies": {
     "@emotion/react": "^11.11.4",
     "@emotion/styled": "^11.11.5",
+    "@langchain/anthropic": "^0.2.3",
     "@langchain/community": "^0.0.52",
     "@langchain/core": "^0.1.60",
     "@langchain/mongodb": "^0.0.1",
@@ -40,7 +41,7 @@
     "zustand": "^4.5.2"
   },
   "devDependencies": {
-    "@tailwindcss/typography": "^0.5.10",
+    "@tailwindcss/typography": "^0.5.13",
     "@trivago/prettier-plugin-sort-imports": "github:trivago/prettier-plugin-sort-imports",
     "@types/node": "^20",
     "@types/react": "^18",

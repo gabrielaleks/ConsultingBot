@@ -4,6 +4,7 @@ import type {Metadata} from 'next'
 import Root from '@/components/Root'
 
 import './globals.css'
+import './chat.css'
 
 export const metadata: Metadata = {
   title: 'fitUprising Chat',

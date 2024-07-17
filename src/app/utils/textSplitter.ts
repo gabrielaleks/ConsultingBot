@@ -12,8 +12,8 @@ async function splitTextIntoDocuments(file: File) {
   const fileContent = await file.text()
 
   const textSplitter = new RecursiveCharacterTextSplitter({
-    chunkSize: 700,
-    chunkOverlap: 200,
+    chunkSize: 1500,
+    chunkOverlap: 250,
   })
 
   const splitDocs = await textSplitter.createDocuments(fileContent.split('\n'))

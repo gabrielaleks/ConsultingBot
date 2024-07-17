@@ -13,7 +13,7 @@ import { formatDocumentsAsString } from "langchain/util/document"
 
 export function getRunnableFromProperties(
   prompt: string,
-  model: BaseChatModel,
+  model: any,
   pastRunnable?: Runnable
 ): RunnableSequence {
   const promptTemplate = ChatPromptTemplate.fromMessages([

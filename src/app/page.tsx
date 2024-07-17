@@ -1,13 +1,14 @@
 'use client'
 
 import { useCompletion } from 'ai/react'
-import { Trash, Bomb } from 'lucide-react'
+import { Trash, Bomb, X } from 'lucide-react'
 import { ChangeEvent, FormEvent, useEffect, useState } from 'react'
 import Chat from '@/components/Chat'
 import { Separator } from '@/components/ui/separator'
 import { generateSessionId, getSessionId, saveSessionId, useFile, useMessages } from '@/lib/store'
 import Alert from '@mui/material/Alert';
 import PurgeHistory from '@/components/PurgeHistory'
+import { AlertTitle, FormControl, IconButton, InputLabel, MenuItem, Select, SelectChangeEvent } from '@mui/material'
 
 async function uploadFile(file: File) {
   try {
@@ -35,6 +36,8 @@ const Home = () => {
   const [purgeAlertOpen, setPurgeAlertOpen] = useState(false)
   const [sessionId, setSessionId] = useState('')
   const [isStreaming, setIsStreaming] = useState(false)
+  const [modelName, setModelName] = useState('')
+  const [showModelAlert, setShowModelAlert] = useState(false);
 
   const handlePurgeAlertOpen = () => {
     setPurgeAlertOpen(!purgeAlertOpen);
@@ -44,6 +47,20 @@ const Home = () => {
     setPurgeAlertOpen(false);
     clearMessages();
   };
+
+  const handleModelChange = (event: SelectChangeEvent) => {
+    const selectedModel = event.target.value as string;
+    setModelName(selectedModel);
+  }
+
+  useEffect(() => {
+    const storedValue = localStorage.getItem('selectedModel') || '';
+    setModelName(storedValue);
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('selectedModel', modelName);
+  }, [modelName]);
 
   const handleFileSelected = async (event?: ChangeEvent<HTMLInputElement>) => {
     if (!event) {
@@ -99,10 +116,11 @@ const Home = () => {
       'Content-Type': 'application/json',
     },
     body: {
-      sessionId: sessionId
+      sessionId: sessionId,
+      modelName: modelName
     },
     onResponse: async (res) => {
-      if (res.status !== 200) throw new Error(res.statusText)
+      if (res.status != 200) throw new Error(res.statusText)
 
       const data = res.body;
       if (!data) return;
@@ -123,6 +141,11 @@ const Home = () => {
   })
 
   const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    if (!modelName) {
+      e.preventDefault()
+      setShowModelAlert(true)
+      return
+    }
     if (!input) {
       e.preventDefault()
       return
@@ -134,8 +157,40 @@ const Home = () => {
 
   return (
     <div className="z-10 flex h-screen flex-col gap-5 p-5">
-      <header className="flex items-center justify-between border-b px-6 py-3">
+      <header className="flex items-center justify-between border-b px-6">
         <h1 className="text-xl font-bold">Chat App</h1>
+        {showModelAlert && (<Alert className="relative" severity="info" variant="filled" onClose={() => { setShowModelAlert(false) }}>
+          Please choose an AI model before starting the conversation!
+        </Alert>)}
+        {filesInserted && (<Alert className="relative" severity="success" variant="filled" onClose={() => { setFilesInserted(false) }}>File(s) uploaded!</Alert>
+        )}
+        <FormControl className='' sx={{ m: 1, minWidth: 120 }}>
+          <InputLabel id="select-model-lable" sx={{ color: 'white' }}>AI Model</InputLabel>
+          <Select
+            labelId="select-model-lable"
+            id="model-select"
+            label="Model"
+            sx={{
+              color: 'white',
+              'fieldset': {
+                borderColor: 'dimgray',
+              },
+              '& svg': {
+                color: 'white',
+              },
+              '&:hover': {
+                '&& fieldset': {
+                  borderColor: 'gray',
+                }
+              }
+            }}
+            value={modelName}
+            onChange={(e) => { handleModelChange(e); setShowModelAlert(false) }}
+          >
+            <MenuItem value={"openai"}>Open AI</MenuItem>
+            <MenuItem value={"anthropic"}>Anthropic</MenuItem>
+          </Select>
+        </FormControl>
       </header>
       <Chat
         messages={messages}
@@ -163,8 +218,6 @@ const Home = () => {
           <Bomb className="h-4 w-4" /> Purge History
         </div>
       </div>
-      {filesInserted && (<Alert className="absolute right-5" severity="success" variant="filled" onClose={() => { setFilesInserted(false) }}>File(s) uploaded!</Alert>
-      )}
       {purgeAlertOpen && <PurgeHistory purgeAlertOpen={purgeAlertOpen} setPurgeAlertOpen={setPurgeAlertOpen} onPurgeComplete={handlePurgeComplete} />}
     </div>
   )
