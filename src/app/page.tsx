@@ -8,7 +8,24 @@ import { Separator } from '@/components/ui/separator'
 import { generateSessionId, getSessionId, saveSessionId, useFile, useMessages } from '@/lib/store'
 import Alert from '@mui/material/Alert';
 import PurgeHistory from '@/components/PurgeHistory'
-import { AlertTitle, FormControl, IconButton, InputLabel, MenuItem, Select, SelectChangeEvent } from '@mui/material'
+import { FormControl, InputLabel, MenuItem, Select, SelectChangeEvent } from '@mui/material'
+import {
+  GPT3_5_OPENAI_MODEL,
+  GPT4_OPENAI_MODEL,
+  GPT4O_OPENAI_MODEL,
+  CLAUDE_3_5_SONNET_MODEL,
+  CLAUDE_3_OPUS_MODEL,
+  CLAUDE_3_HAIKU_MODEL
+} from '@/app/utils/const';
+
+const AI_MODELS = {
+  'GPT 3.5': GPT3_5_OPENAI_MODEL,
+  'GPT-4': GPT4_OPENAI_MODEL,
+  'GPT-4o': GPT4O_OPENAI_MODEL,
+  'Claude 3.5 Sonnet': CLAUDE_3_5_SONNET_MODEL,
+  'Claude 3 Opus': CLAUDE_3_OPUS_MODEL,
+  'Claude 3 Haiku': CLAUDE_3_HAIKU_MODEL
+}
 
 async function uploadFile(file: File) {
   try {
@@ -120,25 +137,45 @@ const Home = () => {
       modelName: modelName
     },
     onResponse: async (res) => {
-      if (res.status != 200) throw new Error(res.statusText)
+      if (res.status !== 200) throw new Error(res.statusText);
 
       const data = res.body;
-      if (!data) return;
-
-      const reader = data.getReader();
-      const decoder = new TextDecoder();
-      let accumulatedContent = '';
-      setIsStreaming(true)
-      while (true) {
-        const { value, done } = await reader.read();
-        if (done) break;
-        const chunkValue = decoder.decode(value);
-        accumulatedContent += chunkValue;
-        setMessages('AI', accumulatedContent)
+      if (!data) {
+        return;
       }
-      setIsStreaming(false)
+
+      let reader;
+      try {
+        setIsStreaming(true);
+        reader = data.getReader();
+        const decoder = new TextDecoder();
+        let accumulatedContent = '';
+
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) {
+            break;
+          }
+          const chunkValue = decoder.decode(value);
+          accumulatedContent += chunkValue;
+          setMessages('AI', accumulatedContent);
+        }
+      } catch (error) {
+        console.error('Error reading stream:', error);
+        setMessages('AI', 'An error occurred while reading the response. Please try again.');
+      } finally {
+        setIsStreaming(false);
+        if (reader) {
+          reader.releaseLock();
+        }
+      }
+    },
+    onError: (error) => {
+      console.error('Error in useCompletion:', error);
+      setMessages('AI', 'An error occurred. Please try again.');
+      setIsStreaming(false);
     }
-  })
+  });
 
   const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
     if (!modelName) {
@@ -187,8 +224,11 @@ const Home = () => {
             value={modelName}
             onChange={(e) => { handleModelChange(e); setShowModelAlert(false) }}
           >
-            <MenuItem value={"openai"}>Open AI</MenuItem>
-            <MenuItem value={"anthropic"}>Anthropic</MenuItem>
+            {
+              Object.entries(AI_MODELS).map(([name, id], i) => (
+                (<MenuItem value={id} key={i}>{name}</MenuItem>)
+              ))
+            }
           </Select>
         </FormControl>
       </header>

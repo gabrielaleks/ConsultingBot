@@ -5,6 +5,14 @@ import { initializeOpenAIEmbeddings, initializeChatOpenAI, initializeChatAnthrop
 import { initializeMongoDBVectorStore } from '@/app/utils/vectorStore'
 import { MongoDBChatMessageHistory } from '@langchain/mongodb';
 import { assignRetrieverToRunnable, getRunnableWithMessageHistory, getRunnableFromProperties } from '@/app/utils/runnables';
+import {
+  GPT3_5_OPENAI_MODEL,
+  GPT4_OPENAI_MODEL,
+  GPT4O_OPENAI_MODEL,
+  CLAUDE_3_5_SONNET_MODEL,
+  CLAUDE_3_OPUS_MODEL,
+  CLAUDE_3_HAIKU_MODEL
+} from '@/app/utils/const';
 
 const STANDALONE_PROMPT_TEMPLATE = `
 Given a chat history and a follow-up question, rephrase the follow-up question to be a standalone question.
@@ -12,41 +20,40 @@ Do NOT answer the question, just reformulate it if needed, otherwise return it a
 Only return the final standalone question.`
 
 const RAG_SYSTEM_PROMPT = `
-In order to help you answer questions asked by the user, you have access to extra content: {context}
+You are an AI chatbot for a software industry consulting company. You have access to a JSON file containing multiple software engineering job descriptions. Your purpose is to provide useful answers to user queries based on this data.
 
-You are an expert software developer AI assistant, designed to help improve and refactor code. Your task is to analyze the provided code and suggest improvements based on best practices, efficiency, readability, and maintainability. Follow these instructions carefully:
+Here is the JSON data containing the job descriptions: {context}
 
-1. Analyze the following code: {question}
+To answer user queries:
 
-2. When improving the code, focus on the following aspects:
-  a. Code efficiency and performance
-  b. Readability and maintainability
-  c. Adherence to coding standards and best practices
-  d. Potential bug fixes or error handling improvements
-  e. Modularization and code organization
-  f. Appropriate use of design patterns (if applicable)
+1. Parse and analyze the JSON data. Pay attention to all fields, especially those highlighted as important in the task description.
 
-3. Provide your response in the following format:
-  # Analysis
-  Briefly describe your overall assessment of the code and the main areas for improvement.
+2. When responding to queries, consider the following:
+   - Job details (title, company, description, duration, engagement type, time commitment, geo preferences)
+   - Skills
+   - Salary and budget information
+   - Publishing and closing dates
 
-  # Improvements
-  List each suggested improvement, explaining the rationale behind it and how it benefits the code.
+3. Tailor your response to the specific query. For example, if asked about jobs with a particular role, filter the data accordingly and present relevant information.
 
-  # Improved Code
-  Present the improved version of the code, with comments explaining significant changes.
+4. Format your response in a clear, organized manner. Use bullet points or numbered lists when appropriate.
 
-4. Ethical considerations:
-  - Do not introduce or suggest any malicious code or functionality.
-  - Respect intellectual property rights and do not copy code from external sources without proper attribution.
-  - Maintain the original intent and functionality of the code unless explicitly instructed otherwise.
+5. If the query requires comparing multiple jobs, present the information in a way that facilitates easy comparison.
 
-5. Interaction instructions:
-  - If you need clarification on any part of the code or improvement instructions, ask for it before proceeding with your analysis.
-  - If the code is too large or complex to improve in a single response, focus on the most critical improvements and mention that further refactoring could be done in subsequent iterations.
+6. When mentioning specific jobs, always include the job title and company name.
 
-Remember to provide thoughtful and detailed explanations for your suggested improvements, as this will help the developer understand and learn from your recommendations.
+7. If the query touches on salary or rate information, provide ranges when available.
+
+8. If the query is ambiguous or lacks specificity, ask for clarification before providing an answer.
+
+9. If the query cannot be answered based on the available data, politely explain why and suggest alternative information you can provide.
+
+Here is the user's query: {question}
+
+Please analyze the JSON data and provide a comprehensive answer to the user's query. Format your response in a clear and organized manner, using appropriate headings, bullet points, or numbered lists as needed.
 `
+
+const MAX_RETRIEVED_DOCS = 50;
 
 export async function POST(request: Request) {
   const body = await request.json()
@@ -63,17 +70,24 @@ export async function POST(request: Request) {
     const documentsCollection = await getDatabaseConnectionToCollection('embeddings')
 
     let model;
-    if (modelName == "openai") {
-      model = initializeChatOpenAI()
-    } else if (modelName == "anthropic") {
-      model = initializeChatAnthropic()
-    } else {
-      throw new Error(`Unsupported model name: ${modelName}. Please use either "openai" or "anthropic".`);
+    switch (modelName) {
+      case (GPT3_5_OPENAI_MODEL):
+      case (GPT4_OPENAI_MODEL):
+      case (GPT4O_OPENAI_MODEL):
+        model = initializeChatOpenAI(modelName);
+        break
+      case (CLAUDE_3_HAIKU_MODEL):
+      case (CLAUDE_3_OPUS_MODEL):
+      case (CLAUDE_3_5_SONNET_MODEL):
+        model = initializeChatAnthropic(modelName);
+        break
+      default:
+        throw new Error(`Unsupported model name: ${modelName}.`);
     }
 
     const embeddings = initializeOpenAIEmbeddings()
     const vectorStore = initializeMongoDBVectorStore(embeddings, documentsCollection)
-    const retriever = vectorStore.asRetriever()
+    const retriever = vectorStore.asRetriever(MAX_RETRIEVED_DOCS)
 
     const questionRunnable = getRunnableFromProperties(STANDALONE_PROMPT_TEMPLATE, model)
     const retrieverRunnable = assignRetrieverToRunnable(questionRunnable, retriever)

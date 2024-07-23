@@ -7,9 +7,9 @@ export function initializeOpenAIEmbeddings() {
   });
 }
 
-export function initializeChatOpenAI() {
+export function initializeChatOpenAI(modelName: string) {
   return new ChatOpenAI({
-    modelName: 'gpt-4o',
+    modelName: modelName,
     openAIApiKey: process.env.OPENAI_API_KEY,
     // Between 0 and 1. Lower value are deterministic, while higher are random
     temperature: 0,
@@ -20,9 +20,9 @@ export function initializeChatOpenAI() {
   });
 }
 
-export function initializeChatAnthropic() {
+export function initializeChatAnthropic(modelName: string) {
   return new ChatAnthropic({
-    model: 'claude-3-5-sonnet-20240620',
+    model: modelName,
     apiKey: process.env.ANTHROPIC_API_KEY,
     temperature: 0,
     maxTokens: 1024
