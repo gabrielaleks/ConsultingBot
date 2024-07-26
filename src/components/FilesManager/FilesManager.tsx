@@ -13,8 +13,7 @@ const FilesManager = () => {
           <FolderCog
             className='cursor-pointer'
             size={20}
-            color='grey'
-            // onClick={() => { setOpenModal(true) }}
+            onClick={() => { setOpenModal(true) }}
           />
           {openModal && <Modal open={openModal} setOpenModal={setOpenModal} />}
         </div>

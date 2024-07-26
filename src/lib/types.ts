@@ -1,7 +1,8 @@
 export namespace FilesManager {
   export interface File {
     id: string;
-    name: string;
+    company: string;
+    jobTitle: string;
   }
 
   export interface Files {

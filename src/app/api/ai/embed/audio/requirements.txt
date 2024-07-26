@@ -1,4 +1,0 @@
-pyannote.audio
-pydub
-openai
-python-dotenv

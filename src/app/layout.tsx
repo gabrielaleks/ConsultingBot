@@ -7,8 +7,8 @@ import './globals.css'
 import './chat.css'
 
 export const metadata: Metadata = {
-  title: 'fitUprising Chat',
-  description: 'fitUprising chat',
+  title: 'Consulting Chatbot',
+  description: 'Consulting Chatbot',
 }
 
 export default function RootLayout({children}: {children: React.ReactNode}) {
