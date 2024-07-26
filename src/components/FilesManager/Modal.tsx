@@ -25,15 +25,14 @@ async function deleteFile(fileId: string) {
 const Modal = ({ setOpenModal, open }: Props) => {
   const [isLoading, setIsLoading] = useState<boolean>(true)
   const [deletingFileIds, setDeletingFileIds] = useState<string[]>([]);
-  const [files, setFiles] = useState<FilesManager.Files>({})
+  const [files, setFiles] = useState<FilesManager.Files>({ files: [] })
 
   useEffect(() => {
     setIsLoading(true)
     fetch('/api/files')
       .then((res) => res.json())
-      .then((data) => {
-        const dataFiles: FilesManager.Files = data.files
-        setFiles(dataFiles)
+      .then((data: FilesManager.Files) => {
+        setFiles(data)
         setIsLoading(false)
       })
       .catch((error) => {
@@ -68,13 +67,11 @@ const Modal = ({ setOpenModal, open }: Props) => {
   const handleDeleteButton = async (fileId: string) => {
     setDeletingFileIds(prevState => [...prevState, fileId])
     try {
-      await deleteFile(fileId)
-
-      setFiles(prevFiles => {
-        const updatedFiles = { ...prevFiles };
-        delete updatedFiles[fileId];
-        return updatedFiles;
-      });
+      await deleteFile(fileId);
+      const updatedFiles = {
+        files: files.files.filter(file => file.id !== fileId)
+      };
+      setFiles(updatedFiles);
     } catch (error) {
       throw new Error(`Error: ${error}`)
     } finally {
@@ -101,36 +98,33 @@ const Modal = ({ setOpenModal, open }: Props) => {
             <div className="flex justify-center">
               <Loader className="animate-spin" />
             </div> : (
-              Object.keys(files).length > 0 ? (
+              files.files.length > 0 ? (
                 <div className='overflow-auto max-h-[600px]'>
                   <table className="w-full border-collapse border">
                     <thead>
                       <tr>
-                        <th className="text-left border border-gray-400 px-4 py-2">File Name</th>
+                        <th className="text-left border border-gray-400 px-4 py-2">#</th>
+                        <th className="text-left border border-gray-400 px-4 py-2">Company</th>
+                        <th className="text-left border border-gray-400 px-4 py-2">Job title</th>
                         <th className="text-left border border-gray-400 px-4 py-2">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {Object.keys(files).map(fileKey => (
-                        Object.keys(files[fileKey] || {}).map((fileName) => (
-                          <tr key={fileKey}>
-                            <td className="border border-gray-400 px-4 py-2">{fileName}</td>
-                            <td className="space-x-2 border border-gray-400 px-4 py-2">
-                              <button
-                                className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-2 rounded"
-                                onClick={() => handleDeleteButton(fileKey)}
-                                disabled={deletingFileIds.includes(fileKey)}
-                              >
-                                {deletingFileIds.includes(fileKey) ? <Loader size={15} className='animate-spin' /> : <Trash2 size={15} />}
-                              </button>
-                              <button
-                                className="bg-blue-500 text-white font-bold py-2 px-2 rounded disabled:opacity-50" disabled
-                              >
-                                <SquarePen size={15} />
-                              </button>
-                            </td>
-                          </tr>
-                        ))
+                      {files.files.map((file, i) => (
+                        <tr key={file.id}>
+                          <td className="border border-gray-400 px-4 py-2">{i+1}</td>
+                          <td className="border border-gray-400 px-4 py-2">{file.company}</td>
+                          <td className="border border-gray-400 px-4 py-2">{file.jobTitle}</td>
+                          <td className="space-x-2 border border-gray-400 px-4 py-2 text-center">
+                            <button
+                              className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-2 rounded"
+                              onClick={() => handleDeleteButton(file.id)}
+                              disabled={deletingFileIds.includes(file.id)}
+                            >
+                              {deletingFileIds.includes(file.id) ? <Loader size={15} className='animate-spin' /> : <Trash2 size={15} />}
+                            </button>
+                          </td>
+                        </tr>
                       ))}
                     </tbody>
                   </table>

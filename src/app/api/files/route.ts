@@ -3,21 +3,21 @@ import { getDatabaseConnectionToCollection } from '@/app/utils/database';
 import { FilesManager } from '@/lib/types';
 
 export async function GET() {
-  let files: FilesManager.Files = {};
+  let collectionOfFiles: FilesManager.Files = { files: [] };
   try {
     const collection = await getDatabaseConnectionToCollection('embeddings');
-    const cursor = collection.find().stream();
+    const cursor = collection.aggregate([
+      { $sort: { company: 1 } }
+    ]).stream();
 
     for await (const result of cursor) {
-      const { text, embedding, file } = result;
-      const { name, id } = file;
-      if (!files[id]) {
-        files[id] = {};
-      }
-      if (!files[id][name]) {
-        files[id][name] = [];
-      }
-      files[id][name].push({ text, embedding });
+      const { id, company, title } = result;
+      let file: FilesManager.File = {
+        id,
+        company,
+        jobTitle: title
+      };
+      collectionOfFiles.files.push(file);
     }
   } catch (err) {
     console.error('Error fetching documents:', err);
@@ -25,6 +25,6 @@ export async function GET() {
   }
 
   return NextResponse.json({
-    files: files
+    files: collectionOfFiles.files
   });
 }

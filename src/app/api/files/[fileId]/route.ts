@@ -10,7 +10,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { fileId: s
 
   try {
     const collection = await getDatabaseConnectionToCollection('embeddings');
-    const result = await collection.deleteMany({ 'file.id': fileId });
+    const result = await collection.deleteOne({ 'id': fileId });
 
     if (result.deletedCount === 0) {
       return NextResponse.json({ message: `No file with given id: ${fileId}` }, { status: 404 });

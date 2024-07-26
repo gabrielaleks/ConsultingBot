@@ -1,14 +1,17 @@
+version: '3.8'
+
 services:
-  nextjs-chat-rag:
-    container_name: nextjs-chat-rag
+  consulting-chatbot:
+    container_name: consulting-chatbot
     build:
       context: .
       dockerfile: Dockerfile
+    image: consulting-chatbot
     env_file:
       - .env
     ports:
       - 3000:3000
     entrypoint: sh -c "pnpm install && pnpm run build && pnpm run dev"
-    working_dir: /nextjs-chat-rag
+    working_dir: /consulting-chatbot
     volumes:
-      - .:/nextjs-chat-rag
+      - .:/consulting-chatbot
