@@ -6,4 +6,6 @@ WORKDIR /consulting-chatbot
 
 RUN npm install -g pnpm@${PNPM_VERSION}
 
-ENTRYPOINT pnpm install && pnpm run build && pnpm start
+RUN pnpm install
+
+ENTRYPOINT pnpm run build && pnpm start

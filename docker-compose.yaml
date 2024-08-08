@@ -11,7 +11,10 @@ services:
       - .env
     ports:
       - 3000:3000
-    entrypoint: sh -c "pnpm install && pnpm run build && pnpm run dev"
     working_dir: /consulting-chatbot
     volumes:
       - .:/consulting-chatbot
+      - node_modules:/consulting-chatbot/node_modules
+
+volumes:
+  node_modules:
