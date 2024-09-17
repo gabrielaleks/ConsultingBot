@@ -48,3 +48,13 @@ export function parseMimeType(mimeType: string) {
       return mimeType
   }
 }
+
+export function getAuthorizationHeaderFromQueryParam(): string {
+    if (typeof window === 'undefined') {
+        return '';
+    }
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const pw = urlParams.get('pw');
+    return pw ? pw : '';
+}

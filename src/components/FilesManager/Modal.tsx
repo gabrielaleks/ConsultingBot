@@ -1,6 +1,7 @@
 import React, { useState, useEffect, Dispatch, SetStateAction } from 'react';
 import { X, Trash2, Loader, SquarePen } from 'lucide-react'
 import { FilesManager } from '@/lib/types';
+import { getAuthorizationHeaderFromQueryParam } from '@/lib/utils';
 
 interface Props {
   setOpenModal: Dispatch<SetStateAction<boolean>>
@@ -10,7 +11,10 @@ interface Props {
 async function deleteFile(fileId: string) {
   try {
     const response = await fetch(`/api/files/${fileId}`, {
-      method: 'DELETE'
+      method: 'DELETE',
+      headers: {
+        "Authorization": getAuthorizationHeaderFromQueryParam()
+      }
     });
 
     if (!response.ok) {
@@ -29,7 +33,11 @@ const Modal = ({ setOpenModal, open }: Props) => {
 
   useEffect(() => {
     setIsLoading(true)
-    fetch('/api/files')
+    fetch('/api/files', {
+      headers: {
+        "Authorization": getAuthorizationHeaderFromQueryParam()
+      }
+    })
       .then((res) => res.json())
       .then((data: FilesManager.Files) => {
         setFiles(data)
