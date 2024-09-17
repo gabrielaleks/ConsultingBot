@@ -16,7 +16,6 @@ export namespace JobsManager {
     title: string;
     company: {
       name: string;
-  
     };
     description: string;
     skills: Array<{
@@ -35,7 +34,7 @@ export namespace JobsManager {
     salaryMinRange: string;
     salaryMaxRange: string;
   }
-  
+
   export interface JsonData {
     jobs: Job[];
   }

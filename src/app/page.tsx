@@ -17,6 +17,7 @@ import {
   CLAUDE_3_OPUS_MODEL,
   CLAUDE_3_HAIKU_MODEL
 } from '@/app/utils/const';
+import { getAuthorizationHeaderFromQueryParam } from '@/lib/utils'
 
 const AI_MODELS = {
   'GPT 3.5': GPT3_5_OPENAI_MODEL,
@@ -34,6 +35,9 @@ async function uploadFile(file: File) {
     const response = await fetch('/api/ai/embed', {
       method: 'POST',
       body: formData,
+      headers: {
+        "Authorization": getAuthorizationHeaderFromQueryParam()
+      }
     })
 
     if (!response.ok) {
@@ -131,6 +135,7 @@ const Home = () => {
     api: `/api/ai`,
     headers: {
       'Content-Type': 'application/json',
+      'Authorization': getAuthorizationHeaderFromQueryParam()
     },
     body: {
       sessionId: sessionId,

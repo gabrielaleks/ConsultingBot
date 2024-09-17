@@ -7,6 +7,7 @@ import DialogTitle from '@mui/material/DialogTitle';
 import { Button } from '@mui/material'
 import { Loader } from 'lucide-react'
 import { getSessionId } from '@/lib/store';
+import { getAuthorizationHeaderFromQueryParam } from '@/lib/utils';
 
 interface Props {
   setPurgeAlertOpen: Dispatch<SetStateAction<boolean>>
@@ -16,7 +17,10 @@ interface Props {
 
 async function purgeHistory(sessionId: string) {
   await fetch(`/api/history/${sessionId}`, {
-    method: 'DELETE'
+    method: 'DELETE',
+    headers: {
+      "Authorization": getAuthorizationHeaderFromQueryParam()
+    }
   })
     .then(response => {
       if (!response.ok) {
